@@ -5,6 +5,7 @@ const axios = require('axios');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const HOST = '0.0.0.0'; // Добавляем явное указание хоста
 
 // Middleware
 app.use(cors());
@@ -38,6 +39,18 @@ app.get('/health', (req, res) => {
     service: 'OpenAI to NVIDIA NIM Proxy', 
     reasoning_display: SHOW_REASONING,
     thinking_mode: ENABLE_THINKING_MODE
+  });
+});
+
+// Root endpoint для проверки
+app.get('/', (req, res) => {
+  res.json({ 
+    message: 'OpenAI to NVIDIA NIM Proxy is running!',
+    endpoints: {
+      health: '/health',
+      models: '/v1/models',
+      chat: '/v1/chat/completions'
+    }
   });
 });
 
@@ -237,9 +250,25 @@ app.all('*', (req, res) => {
   });
 });
 
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`OpenAI to NVIDIA NIM Proxy running on port ${PORT}`);
-  console.log(`Health check: http://localhost:${PORT}/health`);
-  console.log(`Reasoning display: ${SHOW_REASONING ? 'ENABLED' : 'DISABLED'}`);
-  console.log(`Thinking mode: ${ENABLE_THINKING_MODE ? 'ENABLED' : 'DISABLED'}`);
+// Запуск сервера с обработкой ошибок
+app.listen(PORT, HOST, () => {
+  console.log(`🚀 OpenAI to NVIDIA NIM Proxy running on ${HOST}:${PORT}`);
+  console.log(`✅ Health check: http://${HOST}:${PORT}/health`);
+  console.log(`🌐 Root endpoint: http://${HOST}:${PORT}/`);
+  console.log(`🔍 Reasoning display: ${SHOW_REASONING ? 'ENABLED' : 'DISABLED'}`);
+  console.log(`💭 Thinking mode: ${ENABLE_THINKING_MODE ? 'ENABLED' : 'DISABLED'}`);
+}).on('error', (err) => {
+  console.error('❌ Server failed to start:', err);
+  process.exit(1);
+});
+
+// Graceful shutdown
+process.on('SIGINT', () => {
+  console.log('🛑 Shutting down gracefully...');
+  process.exit(0);
+});
+
+process.on('SIGTERM', () => {
+  console.log('🛑 Received SIGTERM, shutting down gracefully...');
+  process.exit(0);
 });
